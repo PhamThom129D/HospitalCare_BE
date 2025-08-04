@@ -1,43 +1,48 @@
 package com.example.hospitalcare_be.service.auth;
 
-import com.example.hospitalcare_be.dto.OtpVerification;
-import jakarta.servlet.http.HttpSession;
+import com.example.hospitalcare_be.model.Account;
+import com.example.hospitalcare_be.repository.IAccountRepository;
+import com.example.hospitalcare_be.util.OtpCache;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import java.util.Random;
 
 @Service
+@RequiredArgsConstructor
+
 public class OtpService {
-    private final HttpSession session;
-    private final SecureRandom random = new SecureRandom();
 
-    public OtpService(HttpSession session) {
-        this.session = session;
+    private final OtpCache otpCache;
+    private final EmailService mailService;
+    private final IAccountRepository accountRepo;
+
+    public void generateAndSendOtp(String emailOrPhone) {
+        Account account = findAccountByIdentifier(emailOrPhone);
+        String otp = generateOtp();
+        otpCache.put(account.getId().toString(), otp, 180);
+        mailService.sendOtpEmail(account.getEmail(), otp);
     }
 
-    public OtpVerification generateOtp(Long accountId) {
-        String otpCode = String.format("%06d", random.nextInt(1_000_000));
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(3);
-
-        OtpVerification otp = new OtpVerification(accountId, otpCode,LocalDateTime.now(), expiresAt,true);
-        otp.setCreatedAt(LocalDateTime.now());
-
-        session.setAttribute("OTP_" + accountId, otp);
-        return otp;
-    }
-
-    public boolean verifyOtp(Long accountId, String code) {
-        OtpVerification otp = (OtpVerification) session.getAttribute("OTP_" + accountId);
-        if (otp == null) return false;
-
-        boolean notExpired = LocalDateTime.now().isBefore(otp.getExpiresAt());
-        boolean match = otp.getOtpCode().equals(code) && notExpired;
-
-        if (match) {
-            session.removeAttribute("OTP_" + accountId);
+    public boolean verifyOtp(Long accountId, String inputOtp) {
+        String cachedOtp = otpCache.get(accountId.toString());
+        if (cachedOtp != null && cachedOtp.equals(inputOtp)) {
+            otpCache.remove(accountId.toString());
+            return true;
         }
+        return false;
+    }
 
-        return match;
+    String generateOtp() {
+        return String.valueOf(new Random().nextInt(900000) + 100000);
+    }
+
+    Account findAccountByIdentifier(String identifier) {
+        return identifier.contains("@")
+                ? accountRepo.findByEmail(identifier)
+                .orElseThrow(() -> new RuntimeException("Account not found with email: " + identifier))
+                : accountRepo.findByPhonenumber(identifier)
+                .orElseThrow(() -> new RuntimeException("Account not found with phone: " + identifier));
     }
 }

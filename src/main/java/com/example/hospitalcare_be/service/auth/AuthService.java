@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,6 +31,8 @@ public class AuthService implements IAuthService {
     private final IAccountRepository accountRepo;
     private final IRoleRepository roleRepo;
     private final CloudinaryService cloudinaryService;
+    private final OtpService otpService;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse register(AccountRequest request) {
@@ -83,8 +86,39 @@ public class AuthService implements IAuthService {
         );
 
         String token = jwtUtil.generateToken(authentication);
-        Account account = findAccountByIdentifier(request.getEmailOrPhone());
+        Account account = otpService.findAccountByIdentifier(request.getEmailOrPhone());
 
+        return buildAuthResponse(token, account);
+    }
+
+    @Override
+    public AuthResponse loginWithGoogle(LoginRequest loginRequest) {
+        return null;
+    }
+
+    @Override
+    public String loginWithOtp(LoginRequest loginRequest) {
+        Account account = otpService.findAccountByIdentifier(loginRequest.getEmailOrPhone());
+        if (account == null) {
+            throw new RuntimeException("Account not found with email or phone: " + loginRequest.getEmailOrPhone());
+        }
+        String otp = otpService.generateOtp();
+        if (loginRequest.getEmailOrPhone().contains("@")) {
+            otpService.generateAndSendOtp(loginRequest.getEmailOrPhone());
+        } else {
+            throw new RuntimeException("Invalid email.");
+        }
+        return otp;
+    }
+
+    @Override
+    public AuthResponse verifyOtp(LoginRequest loginRequest) {
+        Account account = otpService.findAccountByIdentifier(loginRequest.getEmailOrPhone());
+        boolean success = otpService.verifyOtp(account.getId(),loginRequest.getOtpCode());
+        if (!success) {
+            throw new RuntimeException("Mã OTP không đúng.");
+        }
+        String token = jwtUtil.generateToken(account.getEmail(), account.getRoles().stream().map(Role::getName).toList());
         return buildAuthResponse(token, account);
     }
 
@@ -105,13 +139,6 @@ public class AuthService implements IAuthService {
         );
     }
 
-    private Account findAccountByIdentifier(String identifier) {
-        return identifier.contains("@")
-                ? accountRepo.findByEmail(identifier)
-                .orElseThrow(() -> new RuntimeException("Account not found with email: " + identifier))
-                : accountRepo.findByPhonenumber(identifier)
-                .orElseThrow(() -> new RuntimeException("Account not found with phone: " + identifier));
-    }
 }
 
 

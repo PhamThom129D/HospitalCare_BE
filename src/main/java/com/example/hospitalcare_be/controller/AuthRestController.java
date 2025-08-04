@@ -28,4 +28,19 @@ public class AuthRestController {
         AuthResponse authResponse = authService.login(loginRequest);
         return ResponseEntity.ok(authResponse);
     }
+    @PostMapping("/login-gmail")
+    public ResponseEntity<?> loginWithGoogle(@ModelAttribute LoginRequest loginRequest) {
+        AuthResponse authResponse = authService.loginWithGoogle(loginRequest);
+        return ResponseEntity.ok(authResponse);
+    }
+    @PostMapping("/login-otp")
+    public ResponseEntity<String> loginWithOtp(@ModelAttribute LoginRequest loginRequest) {
+        authService.loginWithOtp(loginRequest);
+        return ResponseEntity.ok("OTP sent successfully");
+    }
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@ModelAttribute LoginRequest loginRequest) {
+        AuthResponse authResponse = authService.verifyOtp(loginRequest);
+        return ResponseEntity.ok(authResponse);
+    }
 }
