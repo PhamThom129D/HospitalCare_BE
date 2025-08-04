@@ -5,6 +5,7 @@ import com.example.hospitalcare_be.dto.AuthResponse;
 import com.example.hospitalcare_be.dto.LoginRequest;
 import com.example.hospitalcare_be.service.auth.IAuthService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,6 +39,20 @@ public class AuthRestController {
         authService.loginWithOtp(loginRequest);
         return ResponseEntity.ok("OTP sent successfully");
     }
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@ModelAttribute LoginRequest loginRequest) {
+        try {
+            authService.resendOtp(loginRequest);
+            return ResponseEntity.ok("OTP resent successfully");
+        } catch (RuntimeException e) {
+            System.err.println("[ERROR] Resend OTP failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Failed to resend OTP: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("[UNEXPECTED ERROR] " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred.");
+        }
+    }
+
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@ModelAttribute LoginRequest loginRequest) {
         AuthResponse authResponse = authService.verifyOtp(loginRequest);

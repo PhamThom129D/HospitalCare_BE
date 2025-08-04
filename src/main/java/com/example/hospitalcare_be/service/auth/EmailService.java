@@ -20,8 +20,8 @@ public class EmailService {
         String body = """
             <p>Xin chào,</p>
             <p>Bạn đã yêu cầu mã xác thực OTP.</p>
-            <p><strong>Mã OTP của bạn là: <span style="font-size:18px;">%s</span></strong></p>
-            <p>Mã này sẽ hết hạn sau 5 phút.</p>
+            <p><strong>Mã OTP của bạn là: <span style="font-size:25px;">%s</span></strong></p>
+            <p>Mã này sẽ hết hạn sau 3 phút.</p>
             <br>
             <p>Trân trọng,<br>Đội ngũ HospitalCare</p>
             """.formatted(otpCode);

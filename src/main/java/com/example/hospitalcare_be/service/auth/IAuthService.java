@@ -8,6 +8,7 @@ public interface IAuthService {
     AuthResponse register(AccountRequest accountRequest);
     AuthResponse login(LoginRequest loginRequest);
     AuthResponse loginWithGoogle(LoginRequest loginRequest);
-    String loginWithOtp(LoginRequest loginRequest);
+    void loginWithOtp(LoginRequest loginRequest);
+    void resendOtp(LoginRequest loginRequest);
     AuthResponse verifyOtp(LoginRequest loginRequest);
 }

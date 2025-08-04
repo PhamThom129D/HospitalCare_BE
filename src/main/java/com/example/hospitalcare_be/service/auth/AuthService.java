@@ -9,6 +9,7 @@ import com.example.hospitalcare_be.repository.IAccountRepository;
 import com.example.hospitalcare_be.repository.IRoleRepository;
 import com.example.hospitalcare_be.service.CloudinaryService;
 import com.example.hospitalcare_be.util.JwtUtil;
+import com.example.hospitalcare_be.util.OtpCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +32,7 @@ public class AuthService implements IAuthService {
     private final IRoleRepository roleRepo;
     private final CloudinaryService cloudinaryService;
     private final OtpService otpService;
+    private final OtpCache otpCache;
     private final EmailService emailService;
 
     @Override
@@ -97,7 +98,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public String loginWithOtp(LoginRequest loginRequest) {
+    public void loginWithOtp(LoginRequest loginRequest) {
         Account account = otpService.findAccountByIdentifier(loginRequest.getEmailOrPhone());
         if (account == null) {
             throw new RuntimeException("Account not found with email or phone: " + loginRequest.getEmailOrPhone());
@@ -108,8 +109,34 @@ public class AuthService implements IAuthService {
         } else {
             throw new RuntimeException("Invalid email.");
         }
-        return otp;
     }
+
+    @Override
+    public void resendOtp(LoginRequest loginRequest) {
+        if (loginRequest.getEmailOrPhone() == null || loginRequest.getEmailOrPhone().isBlank()) {
+            throw new RuntimeException("Email or phone must not be empty.");
+        }
+
+        Account account = otpService.findAccountByIdentifier(loginRequest.getEmailOrPhone());
+        if (account == null) {
+            throw new RuntimeException("Account not found with email or phone: " + loginRequest.getEmailOrPhone());
+        }
+
+        String key = account.getId().toString();
+        String oldOtp = otpCache.get(key);
+
+        if (oldOtp != null) {
+            throw new RuntimeException("OTP is still valid. Please wait before requesting a new one.");
+        }
+
+        String newOtp = otpService.generateOtp();
+        otpCache.put(key, newOtp, 180);
+        emailService.sendOtpEmail(account.getEmail(), newOtp);
+
+        System.out.println("[INFO] Resent OTP to: " + account.getEmail() + " with code: " + newOtp);
+    }
+
+
 
     @Override
     public AuthResponse verifyOtp(LoginRequest loginRequest) {
@@ -132,7 +159,6 @@ public class AuthService implements IAuthService {
                 .roles(account.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
                 .build();
     }
-
     private Authentication performAuthentication(String identifier, String rawPassword) {
         return authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(identifier, rawPassword)
