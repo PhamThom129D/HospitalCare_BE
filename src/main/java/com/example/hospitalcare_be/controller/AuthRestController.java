@@ -2,6 +2,7 @@ package com.example.hospitalcare_be.controller;
 
 import com.example.hospitalcare_be.dto.AccountRequest;
 import com.example.hospitalcare_be.dto.AuthResponse;
+import com.example.hospitalcare_be.dto.LoginRequest;
 import com.example.hospitalcare_be.service.auth.IAuthService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,5 +21,11 @@ public class AuthRestController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@ModelAttribute AccountRequest accountRequest) {
         return ResponseEntity.ok( authService.register(accountRequest));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@ModelAttribute LoginRequest loginRequest) {
+        AuthResponse authResponse = authService.login(loginRequest);
+        return ResponseEntity.ok(authResponse);
     }
 }

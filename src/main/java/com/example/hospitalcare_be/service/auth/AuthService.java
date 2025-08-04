@@ -25,12 +25,11 @@ import java.util.stream.Collectors;
 public class AuthService implements IAuthService {
 
     private final AuthenticationManager authenticationManager;
-    private  final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final IAccountRepository accountRepo;
     private final IRoleRepository roleRepo;
     private final CloudinaryService cloudinaryService;
-
 
     @Override
     public AuthResponse register(AccountRequest request) {
@@ -38,25 +37,29 @@ public class AuthService implements IAuthService {
                 (request.getPhonenumber() == null || request.getPhonenumber().isBlank())) {
             throw new RuntimeException("Email or phone number is required");
         }
+
         if (request.getEmail() != null && accountRepo.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
+
         if (request.getPhonenumber() != null && accountRepo.existsByPhonenumber(request.getPhonenumber())) {
             throw new RuntimeException("Phone number already exists");
         }
+
         Account account = new Account();
         account.setFullname(request.getFullname());
         account.setEmail(request.getEmail());
         account.setPhonenumber(request.getPhonenumber());
         account.setPassword(passwordEncoder.encode(request.getPassword()));
+        account.setGender(request.getGender());
+        account.setStatus("PENDING");
+
         if (request.getAvatarFile() != null && !request.getAvatarFile().isEmpty()) {
             Map uploadResult = cloudinaryService.uploadImage(request.getAvatarFile());
-            String imageUrl = (String) uploadResult.get("secure_url");
-            account.setAvtPath(imageUrl);
+            account.setAvtPath((String) uploadResult.get("secure_url"));
         } else {
             account.setAvtPath("https://res.cloudinary.com/dk6vu2mlh/image/upload/v1754320302/x7hglgokkpmvsvjqm8xz.jpg");
         }
-
 
         Role selectedRole = roleRepo.findByName(request.getRole())
                 .orElseThrow(() -> new RuntimeException("Role not found"));
@@ -64,36 +67,51 @@ public class AuthService implements IAuthService {
 
         accountRepo.save(account);
 
-        String loginIdentifier = request.getPhonenumber() != null
-                ? request.getPhonenumber()
-                : request.getEmail();
-
-        Authentication auth = performAuthentication(loginIdentifier, request.getPassword());
+        String identifier = request.getPhonenumber() != null ? request.getPhonenumber() : request.getEmail();
+        Authentication auth = performAuthentication(identifier, request.getPassword());
         String token = jwtUtil.generateToken(auth);
 
-        return buildAuthResponse(account, token);
+        return buildAuthResponse(token, account);
     }
 
     @Override
-    public AuthResponse login(LoginRequest loginRequest) {
-        return null;
+    public AuthResponse login(LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmailOrPhone(), request.getPassword()
+                )
+        );
+
+        String token = jwtUtil.generateToken(authentication);
+        Account account = findAccountByIdentifier(request.getEmailOrPhone());
+
+        return buildAuthResponse(token, account);
     }
-    private Authentication performAuthentication(String emailOrPhone, String rawPassword) {
+
+    private AuthResponse buildAuthResponse(String token, Account account) {
+        return AuthResponse.builder()
+                .token(token)
+                .email(account.getEmail())
+                .phonenumber(account.getPhonenumber())
+                .fullname(account.getFullname())
+                .avatarUrl(account.getAvtPath())
+                .roles(account.getRoles().stream().map(Role::getName).collect(Collectors.toSet()))
+                .build();
+    }
+
+    private Authentication performAuthentication(String identifier, String rawPassword) {
         return authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(emailOrPhone, rawPassword)
+                new UsernamePasswordAuthenticationToken(identifier, rawPassword)
         );
     }
 
-    private AuthResponse buildAuthResponse(Account account, String token) {
-        return new AuthResponse(
-                token,
-                account.getFullname(),
-                account.getEmail(),
-                account.getPhonenumber(),
-                account.getAvtPath(),
-                account.getRoles().stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toSet())
-        );
+    private Account findAccountByIdentifier(String identifier) {
+        return identifier.contains("@")
+                ? accountRepo.findByEmail(identifier)
+                .orElseThrow(() -> new RuntimeException("Account not found with email: " + identifier))
+                : accountRepo.findByPhonenumber(identifier)
+                .orElseThrow(() -> new RuntimeException("Account not found with phone: " + identifier));
     }
 }
+
+
