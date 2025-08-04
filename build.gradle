@@ -24,19 +24,46 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+
+    // ====== Spring Boot Core Starters ======
+    implementation 'org.springframework.boot:spring-boot-starter-web'         // REST API, Web MVC
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'   // Thymeleaf template engine
+    implementation 'org.springframework.boot:spring-boot-starter-security'    // Spring Security
+
+    // ====== Spring Data ======
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'    // JPA & Hibernate
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'   // Spring JDBC
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // ====== MySQL Driver ======
+    runtimeOnly 'com.mysql:mysql-connector-j'                                  // MySQL JDBC driver
+
+    // ====== Template Engine Extras ======
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'    // Spring Security support in Thymeleaf
+
+    // ====== JWT Dependencies ======
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'        // JWT API
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'           // JWT core implementation
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'        // Use Jackson for JSON parsing in JWT
+
+    // ====== Cloudinary SDK for Image Upload ======
+    implementation 'com.cloudinary:cloudinary-http44:1.37.0'
+
+    // ====== Lombok (code generator) ======
     compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // ====== Devtools (hot reload during dev only) ======
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // ====== Testing Dependencies ======
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'    // JUnit, Mockito...
+    testImplementation 'org.springframework.security:spring-security-test'    // Security test helpers
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'              // JUnit platform runtime
+
+    // ====== Send Mail ======
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 }
 
 tasks.named('test') {
