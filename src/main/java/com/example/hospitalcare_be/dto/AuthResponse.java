@@ -1,11 +1,13 @@
 package com.example.hospitalcare_be.dto;
 
 import com.example.hospitalcare_be.model.Role;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.Set;
 
 @Data
+@AllArgsConstructor
 public class AuthResponse {
     private String token;
     private String fullname;

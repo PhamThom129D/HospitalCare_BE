@@ -1,4 +1,4 @@
-package com.example.hospitalcare_be.service;
+package com.example.hospitalcare_be.service.auth;
 
 import com.example.hospitalcare_be.dto.OtpVerification;
 import jakarta.servlet.http.HttpSession;

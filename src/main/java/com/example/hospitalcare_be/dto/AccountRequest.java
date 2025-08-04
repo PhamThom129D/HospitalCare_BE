@@ -13,5 +13,5 @@ public class AccountRequest {
     private String password;
     private String gender;
     private MultipartFile avatarFile;
-    private Set<String> roles;
+    private String role;
 }

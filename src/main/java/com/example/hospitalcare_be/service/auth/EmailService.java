@@ -1,4 +1,4 @@
-package com.example.hospitalcare_be.sevice;
+package com.example.hospitalcare_be.service.auth;
 
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
