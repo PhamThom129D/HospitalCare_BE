@@ -1,10 +1,7 @@
 package com.example.hospitalcare_be.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -17,6 +14,7 @@ import java.util.Set;
 @Setter
  @NoArgsConstructor
  @AllArgsConstructor
+@Builder
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,12 +26,7 @@ public class Account {
     private String password;
     private String gender;
     @Column(name = "avt_path", length = 100000)
-    private String avtPath = "avt_default.gif";
-//    @Transient
-//    private Doctors doctorDetail;
-//
-//    @Transient
-//    private Patients patientDetail;
+    private String avtPath ;
     private String status;
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -57,4 +50,5 @@ public class Account {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
 }

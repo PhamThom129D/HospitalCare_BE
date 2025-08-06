@@ -1,9 +1,8 @@
-package com.example.hospitalcare_be.service;
+package com.example.hospitalcare_be.security;
 
 import com.example.hospitalcare_be.model.Account;
 import com.example.hospitalcare_be.repository.IAccountRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -38,7 +37,6 @@ public class UserDetailService implements UserDetailsService {
         List<SimpleGrantedAuthority> authorities = account.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName()))
                 .toList();
-
         return new User(
                 principal,
                 account.getPassword(),

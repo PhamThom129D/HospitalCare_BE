@@ -76,6 +76,19 @@ public class JwtUtil {
                 .build()
                 .parseClaimsJws(token);
     }
+    public String generateToken(String email, List<String> roles) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expirationMs);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .claim("roles", roles)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
 }
 //JwtUtil là class tiện ích (utility) để:
 //
