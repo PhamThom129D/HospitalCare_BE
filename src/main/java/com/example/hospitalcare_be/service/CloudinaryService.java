@@ -17,13 +17,17 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
 
-    public Map uploadImage(MultipartFile file) {
+    public Map uploadImage(MultipartFile file, String folderName) {
         try {
-            return cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+            Map uploadOptions = ObjectUtils.asMap(
+                    "folder", folderName
+            );
+            return cloudinary.uploader().upload(file.getBytes(), uploadOptions);
         } catch (IOException e) {
             throw new RuntimeException("Image upload failed", e);
         }
     }
+
 
     public void deleteImage(String publicId) {
         if (StringUtils.isNotBlank(publicId)) {
