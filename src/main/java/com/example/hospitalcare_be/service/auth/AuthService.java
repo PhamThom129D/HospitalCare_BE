@@ -14,14 +14,18 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.Map;
@@ -113,6 +117,7 @@ public class AuthService implements IAuthService {
                     .setAudience(Collections.singletonList(googleClientId))
                     .build();
 
+
             GoogleIdToken idToken = verifier.verify(token);
 
             if (idToken == null) {
@@ -154,11 +159,11 @@ public class AuthService implements IAuthService {
                     .build();
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Đăng nhập Google thất bại: " + e.getMessage());
         }
+
     }
-
-
 
     @Override
     public void loginWithOtp(LoginRequest loginRequest) {
@@ -211,18 +216,24 @@ public class AuthService implements IAuthService {
         System.out.println("[INFO] Resent OTP to: " + account.getEmail() + " with code: " + newOtp);
     }
 
-
-
     @Override
     public AuthResponse verifyOtp(LoginRequest loginRequest) {
         Account account = otpService.findAccountByIdentifier(loginRequest.getEmailOrPhone());
-        boolean success = otpService.verifyOtp(account.getId(),loginRequest.getOtpCode());
+        boolean success = otpService.verifyOtp(account.getId(), loginRequest.getOtpCode());
+
         if (!success) {
-            throw new RuntimeException("Mã OTP không đúng.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã OTP không đúng.");
         }
-        String token = jwtUtil.generateToken(account.getEmail(), account.getRoles().stream().map(Role::getName).toList());
+
+        String token = jwtUtil.generateToken(
+                account.getEmail(),
+                account.getRoles().stream().map(Role::getName).toList()
+        );
+
         return buildAuthResponse(token, account);
     }
+
+
 
     @Override
     public void logout() {

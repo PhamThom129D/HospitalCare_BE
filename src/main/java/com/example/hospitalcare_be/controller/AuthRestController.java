@@ -7,6 +7,8 @@ import com.example.hospitalcare_be.service.auth.IAuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,12 @@ public class AuthRestController {
 
     private final IAuthService authService;
 
+    @PostMapping("/login-google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        AuthResponse authResponse = authService.loginWithGoogle(token);
+        return ResponseEntity.ok(authResponse);
+    }
     @PostMapping("/register")
     public ResponseEntity<?> register(@ModelAttribute AccountRequest accountRequest) {
         try {
@@ -43,12 +51,7 @@ public class AuthRestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Đăng nhap thất bại: " + e.getMessage());
         }
     }
-    @PostMapping("/login-google")
-    public ResponseEntity<?> loginWithGoogle(@RequestBody Map<String, String> body) {
-        String token = body.get("token");
-        AuthResponse authResponse = authService.loginWithGoogle(token);
-        return ResponseEntity.ok(authResponse);
-    }
+
 
     @PostMapping("/login-otp")
     public ResponseEntity<String> loginWithOtp(@RequestBody LoginRequest loginRequest) {
@@ -75,10 +78,20 @@ public class AuthRestController {
         }
     }
 
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthRestController.class);
+
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody LoginRequest loginRequest) {
-        AuthResponse authResponse = authService.verifyOtp(loginRequest);
-        return ResponseEntity.ok(authResponse);
+        try {
+            AuthResponse authResponse = authService.verifyOtp(loginRequest);
+            return ResponseEntity.ok(authResponse);
+        } catch (Exception e) {
+            logger.error("OTP verification failed for email: {}", loginRequest.getEmailOrPhone(), e);
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", "Invalid OTP . Please try again."));
+        }
     }
 
     @GetMapping("/logout")
