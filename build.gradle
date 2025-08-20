@@ -72,7 +72,8 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.12'
 //    implementation 'org.slf4j:slf4j-simple:2.0.12'
 
-
+    // ====== Gemini API ======
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 
 tasks.named('test') {
